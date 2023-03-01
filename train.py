@@ -5,6 +5,8 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
 
+from time import perf_counter
+
 from PIL import Image
 
 from model import NST
@@ -45,7 +47,9 @@ model = NST()
 
 nst_opt = optim.Adam([gen_img], lr=LR)
 
+start = perf_counter()
 for step in range(STEPS):
+
 
     real_part = model(real_img)
     style_part = model(style_img)
@@ -76,6 +80,8 @@ for step in range(STEPS):
     nst_opt.step()
 
     if step % 200 == 0:
-        print(f'Loss: {loss}')
+        end = perf_counter()
+        print(f'Loss: {loss:.3f}, Time: {end-start:.3f} ')
         save_image(gen_img,f'./gen_pics/step{step}_generated.png')
+        start = perf_counter()
     
