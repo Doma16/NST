@@ -10,7 +10,7 @@ from time import perf_counter
 from PIL import Image
 
 from model import NST
-
+from utils import GramMatrix
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 # Using CPU, img is to big for my GPU
@@ -24,10 +24,10 @@ LR = 5e-3 # Not used for LBFGS
 STEPS = 21
 
 ALPHA = 1
-BETA = 0#0.01
+BETA = 0.03
 
-PATH_REAL = f'./pics/myself.jpg'
-PATH_STYLE = f'./pics/Inosuke.jpeg'
+PATH_REAL = f'./pics/BepoContent.jpeg'
+PATH_STYLE = f'./pics/JoJoStyle.jpeg'
 
 transform = transforms.Compose(
     [
@@ -39,21 +39,22 @@ transform = transforms.Compose(
 real_img = Image.open(PATH_REAL)
 style_img = Image.open(PATH_STYLE)
 
-real_img = transform(real_img).view(1,CHANNELS,IMG_SIZE,IMG_SIZE)
-style_img = transform(style_img).view(1,CHANNELS,IMG_SIZE,IMG_SIZE)
+real_img = transform(real_img).view(1,CHANNELS,IMG_SIZE,IMG_SIZE).to(device)
+style_img = transform(style_img).view(1,CHANNELS,IMG_SIZE,IMG_SIZE).to(device)
 
 genReal_img = real_img.clone()#.requires_grad_(True)
 genRandom_img = torch.randn(real_img.shape)#.requires_grad_(True)
 genStyle_img = style_img.clone()#.requires_grad_(True)
-'''
 
+'''
 eps = torch.randn((1,1,IMG_SIZE,IMG_SIZE))
 
 gen_img = eps * genReal_img + (1-eps) * genStyle_img
 gen_img = gen_img.requires_grad_(True).to(device)
 '''
 
-gen_img = genRandom_img.requires_grad_(True)
+gen_img = genReal_img.requires_grad_(True)
+gen_img = gen_img.to(device)
 
 model = NST().to(device)
 
@@ -79,13 +80,16 @@ for step in range(STEPS):
             
             batch, channels, height, width = g_c.shape
 
-
+            '''
             s_c = s_c.view(channels, height*width)
             g_c = g_c.view(channels, height*width)
-
             ss_c = torch.matmul(s_c,s_c.t())
             gg_c = torch.matmul(g_c,g_c.t())
-
+            '''
+            
+            ss_c = GramMatrix(s_c)
+            gg_c = GramMatrix(g_c)
+    
             style_loss += torch.mean((ss_c - gg_c)**2)
 
         loss = ALPHA * content_loss + BETA * style_loss
