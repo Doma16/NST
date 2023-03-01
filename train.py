@@ -13,19 +13,21 @@ from model import NST
 
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# Using CPU, img is to big for my GPU
+device = torch.device('cpu')
 print(f'Using device {device}')
 
 IMG_SIZE = 256
 CHANNELS = 3
 
-LR = 5e-3
-STEPS = 5000
+LR = 5e-3 # Not used for LBFGS
+STEPS = 21
 
 ALPHA = 1
-BETA = 0.04
+BETA = 0#0.01
 
 PATH_REAL = f'./pics/myself.jpg'
-PATH_STYLE = f'./pics/Vincent_van_Gogh_100.jpg'
+PATH_STYLE = f'./pics/Inosuke.jpeg'
 
 transform = transforms.Compose(
     [
@@ -40,10 +42,20 @@ style_img = Image.open(PATH_STYLE)
 real_img = transform(real_img).view(1,CHANNELS,IMG_SIZE,IMG_SIZE)
 style_img = transform(style_img).view(1,CHANNELS,IMG_SIZE,IMG_SIZE)
 
-gen_img = real_img.clone().requires_grad_(True)
-#gen_img = torch.randn(real_img.shape).requires_grad_(True)
+genReal_img = real_img.clone()#.requires_grad_(True)
+genRandom_img = torch.randn(real_img.shape)#.requires_grad_(True)
+genStyle_img = style_img.clone()#.requires_grad_(True)
+'''
 
-model = NST()
+eps = torch.randn((1,1,IMG_SIZE,IMG_SIZE))
+
+gen_img = eps * genReal_img + (1-eps) * genStyle_img
+gen_img = gen_img.requires_grad_(True).to(device)
+'''
+
+gen_img = genRandom_img.requires_grad_(True)
+
+model = NST().to(device)
 
 #nst_opt = optim.Adam([gen_img], lr=LR)
 nst_opt = optim.LBFGS([gen_img])
@@ -51,38 +63,41 @@ nst_opt = optim.LBFGS([gen_img])
 start = perf_counter()
 for step in range(STEPS):
 
+    def closure():
 
-    real_part = model(real_img)
-    style_part = model(style_img)
-    gen_part = model(gen_img)    
+        real_part = model(real_img)
+        style_part = model(style_img)
+        gen_part = model(gen_img)    
+        nst_opt.zero_grad()
 
-    content_loss = 0
-    style_loss = 0
+        content_loss = 0
+        style_loss = 0
 
-    for r_c, s_c, g_c in zip(real_part, style_part, gen_part):
+        for r_c, s_c, g_c in zip(real_part, style_part, gen_part):
 
-        content_loss += torch.mean((r_c - g_c)**2)
-        
-        batch, channels, height, width = g_c.shape
+            content_loss += torch.mean((r_c - g_c)**2)
+            
+            batch, channels, height, width = g_c.shape
 
 
-        s_c = s_c.view(channels, height*width)
-        g_c = g_c.view(channels, height*width)
+            s_c = s_c.view(channels, height*width)
+            g_c = g_c.view(channels, height*width)
 
-        ss_c = torch.matmul(s_c,s_c.t())
-        gg_c = torch.matmul(g_c,g_c.t())
+            ss_c = torch.matmul(s_c,s_c.t())
+            gg_c = torch.matmul(g_c,g_c.t())
 
-        style_loss += torch.mean((ss_c - gg_c)**2)
+            style_loss += torch.mean((ss_c - gg_c)**2)
 
-    loss = ALPHA * content_loss + BETA * style_loss
+        loss = ALPHA * content_loss + BETA * style_loss
+        print(f'Loss: {loss:.3f}')
+        loss.backward(retain_graph=False)
 
-    nst_opt.zero_grad()
-    loss.backward()
-    nst_opt.step()
+        return loss
+    
+    nst_opt.step(closure)
 
-    if step % 200 == 0:
+    if step % 2 == 0:
         end = perf_counter()
-        print(f'Loss: {loss:.3f}, Time: {end-start:.3f} ')
+        print(f'Time: {end-start:.3f}, Step: {step}')
         save_image(gen_img,f'./gen_pics/step{step}_generated.png')
         start = perf_counter()
-    
