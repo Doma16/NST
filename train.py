@@ -45,7 +45,8 @@ gen_img = real_img.clone().requires_grad_(True)
 
 model = NST()
 
-nst_opt = optim.Adam([gen_img], lr=LR)
+#nst_opt = optim.Adam([gen_img], lr=LR)
+nst_opt = optim.LBFGS([gen_img])
 
 start = perf_counter()
 for step in range(STEPS):
