@@ -2,12 +2,9 @@ import torch
 
 def GramMatrix(img):
     b, c, h, w = img.shape
-    imgt = img.clone()
-
     assert b == 1
-    for i in range(c):
-        imgt[0][i] = imgt[0][i].t()
 
+    imgt = torch.transpose(img.squeeze(0), 1, 2).unsqueeze(0)
     gm = torch.matmul(img,imgt)
-    
+
     return gm

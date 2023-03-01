@@ -24,10 +24,10 @@ LR = 5e-3 # Not used for LBFGS
 STEPS = 21
 
 ALPHA = 1
-BETA = 0.03
+BETA = 0.1
 
-PATH_REAL = f'./pics/BepoContent.jpeg'
-PATH_STYLE = f'./pics/JoJoStyle.jpeg'
+PATH_REAL = f'./pics/myself.jpg'
+PATH_STYLE = f'./pics/strokes_alb2.jpg'
 
 transform = transforms.Compose(
     [
