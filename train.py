@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import matplotlib.pyplot as plt
+import numpy as np
 
 import torchvision.transforms as transforms
 from torchvision.utils import save_image
@@ -26,8 +28,11 @@ STEPS = 21
 ALPHA = 1
 BETA = 0.1
 
-PATH_REAL = f'./pics/myself.jpg'
-PATH_STYLE = f'./pics/strokes_alb2.jpg'
+TEST_CONTENT = False
+TEST_STYLE = False
+
+PATH_REAL = f'./pics/BepoContent.jpeg'
+PATH_STYLE = f'./pics/JoJoStyle.jpeg'
 
 transform = transforms.Compose(
     [
@@ -78,17 +83,23 @@ for step in range(STEPS):
 
             content_loss += torch.mean((r_c - g_c)**2)
             
-            batch, channels, height, width = g_c.shape
+            #test for content features
+            if TEST_CONTENT:
+                test = r_c.cpu().detach().numpy().squeeze(0)
+                test = np.mean(test, axis=(0))
+                plt.imshow(test)
+                plt.show()
 
-            '''
-            s_c = s_c.view(channels, height*width)
-            g_c = g_c.view(channels, height*width)
-            ss_c = torch.matmul(s_c,s_c.t())
-            gg_c = torch.matmul(g_c,g_c.t())
-            '''
             
             ss_c = GramMatrix(s_c)
             gg_c = GramMatrix(g_c)
+
+            #test for style_features
+            if TEST_STYLE:
+                test = ss_c.cpu().detach().numpy().squeeze(0)
+                test = np.mean(test, axis=(0))
+                plt.imshow(test)
+                plt.show()
     
             style_loss += torch.mean((ss_c - gg_c)**2)
 

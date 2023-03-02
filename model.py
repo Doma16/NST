@@ -7,8 +7,8 @@ class NST(nn.Module):
     def __init__(self):
         super(NST, self).__init__()
 
-        self.content = [0,5,10,19,28]
-        self.nst = vgg19(pretrained=True).features[:29]
+        self.content = [0,5,10]
+        self.nst = vgg19(pretrained=True).features[:12]
 
     
     def forward(self, x):
