@@ -23,16 +23,16 @@ IMG_SIZE = 256
 CHANNELS = 3
 
 LR = 5e-3 # Not used for LBFGS
-STEPS = 21
+STEPS = 25
 
-ALPHA = 1
+ALPHA = 5
 BETA = 0.1
 
 TEST_CONTENT = False
 TEST_STYLE = False
 
-PATH_REAL = f'./pics/BepoContent.jpeg'
-PATH_STYLE = f'./pics/JoJoStyle.jpeg'
+PATH_REAL = f'./pics/cityview.jpeg'
+PATH_STYLE = f'./pics/Vincent_van_Gogh_368.jpg'
 
 transform = transforms.Compose(
     [
